@@ -1,2 +1,1 @@
-# ezloc-ui
-Application Web pour EZLOC
+# Ezloc Web Application
