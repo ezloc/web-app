@@ -19,6 +19,60 @@ This is a cloud-native Vue.js application built with best practices for security
 ## Project Structure
 The project follows a feature-based organization pattern to enhance maintainability and scalability. See [Project Structure](#project-structure) for details.
 
+```bash
+web-app/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       ├── cd-staging.yml
+│       └── cd-production.yml
+├── public/
+│   ├── favicon.ico
+│   └── index.html
+├── src/
+│   ├── assets/              # Static assets
+│   ├── components/          # Reusable Vue components
+│   │   ├── common/          # Common UI components
+│   │   └── domain/          # Business domain components
+│   ├── composables/         # Vue 3 composition API functions
+│   ├── config/              # App configuration
+│   ├── router/              # Vue Router
+│   │   └── index.ts
+│   ├── services/            # API and third-party service integrations
+│   │   ├── api.service.ts
+│   │   └── auth.service.ts
+│   ├── store/               # Vuex store modules
+│   │   ├── index.ts
+│   │   └── modules/
+│   ├── types/               # TypeScript type definitions
+│   ├── utils/               # Utility functions
+│   ├── views/               # Page components
+│   ├── App.vue              # Root component
+│   └── main.ts              # Application entry point
+├── tests/
+│   ├── unit/                # Jest unit tests
+│   └── e2e/                 # Cypress end-to-end tests
+├── .commitlintrc.js         # Commit message linting
+├── .editorconfig            # Editor configuration
+├── .env                     # Environment variables
+├── .env.development
+├── .env.production
+├── .eslintrc.js             # ESLint configuration
+├── .gitignore
+├── .huskyrc.js              # Git hooks
+├── .prettierrc.js           # Code formatting
+├── babel.config.js
+├── cypress.json             # E2E testing config
+├── docker-compose.yml       # Local development
+├── Dockerfile               # Production build
+├── jest.config.js           # Unit testing config
+├── package.json
+├── README.md
+├── sonar-project.properties # SonarQube configuration
+├── tsconfig.json            # TypeScript configuration
+└── vue.config.js            # Vue CLI configuration
+```
+
 ## Getting Started
 
 ### Prerequisites
@@ -29,14 +83,14 @@ The project follows a feature-based organization pattern to enhance maintainabil
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/ezloc/web-app.git
-cd web-app
+git clone https://github.com/yourusername/my-cloud-app.git
+cd my-cloud-app
 
 # Install dependencies
 npm install
 
 # Set up environment variables
-cp .env.dev .env
+cp .env.example .env
 
 # Start development server
 npm run serve
