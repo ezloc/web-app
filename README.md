@@ -83,14 +83,14 @@ web-app/
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/my-cloud-app.git
-cd my-cloud-app
+git clone https://github.com/ezloc/web-app.git
+cd web-app
 
 # Install dependencies
 npm install
 
 # Set up environment variables
-cp .env.dev .env
+cp .env.development .env
 
 # Start development server
 npm run serve
