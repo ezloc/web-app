@@ -90,7 +90,7 @@ cd my-cloud-app
 npm install
 
 # Set up environment variables
-cp .env.example .env
+cp .env.dev .env
 
 # Start development server
 npm run serve
