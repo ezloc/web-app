@@ -20,7 +20,7 @@ on:
 
 # Environment variables available to all jobs and steps in this workflow
 env:
-    NODE_VERSION: '22'
+    NODE_VERSION: 22
     DOCKER_REGISTRY: docker.io #ghcr.io
     DOCKER_IMAGE_NAME: ntdtfr/ezloc-${{ github.repository }}
 
