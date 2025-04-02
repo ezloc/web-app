@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 ### Stage 2: Serve with Nginx
-FROM nginx:1.25-alpine as production
+FROM nginx:1.25-alpine AS production
 
 # Remove default Nginx static files
 RUN rm -rf /usr/share/nginx/html/*
