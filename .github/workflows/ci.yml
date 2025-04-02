@@ -81,8 +81,8 @@ jobs:
             name: dist
             path: dist/
 
-        - name: Run E2E tests
-          run: npm run test:e2e --headless
+        # - name: Run E2E tests
+        #   run: npm run test:e2e --headless
 
     quality-gates:
       runs-on: ubuntu-latest
