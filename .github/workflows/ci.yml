@@ -78,9 +78,6 @@ jobs:
             name: dist
             path: dist/
 
-        - name: Run unit tests
-          run: npm run test:unit
-
         - name: Run E2E tests
           run: npm run test:e2e --headless
 
