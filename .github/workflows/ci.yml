@@ -162,9 +162,9 @@ jobs:
           - docker-prepare
         # Only run this job if we're on main, develop branch or pushing a tag
         if: github.event_name != 'pull_request'
-        permissions:
-          contents: read
-          packages: write
+        # permissions:
+        #   contents: read
+        #   packages: write
         strategy:
             fail-fast: false
             matrix:
