@@ -2,11 +2,11 @@
 version: '3.8'
 
 services:
-  web-app:
+  ezloc-web-app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: web-app
+    container_name: ezloc-web-app
     ports:
       - "8080:80"
     env_file:
@@ -14,11 +14,11 @@ services:
     volumes:
       - ./src:/app/src
     networks:
-      - app-network
+      - ezloc-network
 
   # Optional development database
-  db:
-    container_name: db
+  ezloc-db:
+    container_name: ezloc-db
     image: postgres:13-alpine
     environment:
       POSTGRES_USER: postgres
@@ -29,10 +29,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - app-network
+      - ezloc-network
 
 networks:
-  app-network:
+  ezloc-network:
     driver: bridge
 
 volumes:
