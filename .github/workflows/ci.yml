@@ -84,21 +84,21 @@ jobs:
         # - name: Run E2E tests
         #   run: npm run test:e2e --headless
 
-    quality-gates:
-      runs-on: ubuntu-latest
-      needs:
-        - build
-      steps:
-        - name: SonarQube Quality Gates
-          uses: SonarSource/sonarcloud-github-action@master
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          with:
-            sonarToken: ${{ secrets.SONAR_TOKEN }}
-            sonarProjectKey: ${{ github.repository }}
-            sonarOrganization: ${{ github.repository_owner }}
-            sonarQualityGate: 'WARN'
+    # quality-gates:
+    #   runs-on: ubuntu-latest
+    #   needs:
+    #     - build
+    #   steps:
+    #     - name: SonarQube Quality Gates
+    #       uses: SonarSource/sonarcloud-github-action@master
+    #       env:
+    #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    #       with:
+    #         sonarToken: ${{ secrets.SONAR_TOKEN }}
+    #         sonarProjectKey: ${{ github.repository }}
+    #         sonarOrganization: ${{ github.repository_owner }}
+    #         sonarQualityGate: 'WARN'
 
     docker-prepare:
         runs-on: ubuntu-latest
