@@ -1,6 +1,6 @@
 # Dockerfile
 # Build stage
-FROM node:16-alpine as build
+FROM node:22-alpine as build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
