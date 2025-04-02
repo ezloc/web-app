@@ -23,7 +23,7 @@ target "image" {
 # docker buildx bake image-dev
 target "image-dev" {
   inherits = ["image"]
-  #dockerfile = "./Dockerfile.dev"
+  dockerfile = "./Dockerfile.dev"
   output = ["type=docker"]
 }
 
