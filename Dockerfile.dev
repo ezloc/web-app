@@ -7,14 +7,14 @@ WORKDIR /app
 
 # Install dependencies early for better caching
 COPY package.json package-lock.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source files and build the application
 COPY . .
 RUN npm run build
 
 ### Stage 2: Serve with Nginx
-FROM nginx:1.25-alpine as production
+FROM nginx:1.25-alpine as development
 
 # Remove default Nginx static files
 RUN rm -rf /usr/share/nginx/html/*
