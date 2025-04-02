@@ -127,18 +127,18 @@ jobs:
             with:
               images: |
                 ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}
-              tags: |
-                type=ref,event=branch
-                type=ref,event=pr
-                type=semver,pattern={{version}}
-                type=semver,pattern={{major}}.{{minor}}
-                type=sha,format=short
               # tags: |
-              #   # dynamically set the branch name and sha as a custom tag
-              #   type=raw,value=1.0.0-{{branch}}-{{sha}}
-              #   # type=match,pattern=(.*)-r,group=1
-              #   # type=ref,event=pr
-              #   # type=edge
+              #   type=ref,event=branch
+              #   type=ref,event=pr
+              #   type=semver,pattern={{version}}
+              #   type=semver,pattern={{major}}.{{minor}}
+              #   type=sha,format=short
+              tags: |
+                # dynamically set the branch name and sha as a custom tag
+                type=raw,value=1.0.0-{{branch}}-{{sha}}
+                # type=match,pattern=(.*)-r,group=1
+                # type=ref,event=pr
+                # type=edge
               labels: |
                 org.opencontainers.image.title=Ezloc Web Application
                 org.opencontainers.image.description=Web application for Ezloc project
@@ -177,12 +177,6 @@ jobs:
 
           - name: Checkout repository
             uses: actions/checkout@v4
-
-          - name: Download build artifacts
-            uses: actions/download-artifact@v4
-            with:
-              name: dist
-              path: dist/
 
           - name: Download meta bake definition
             uses: actions/download-artifact@v4
@@ -282,7 +276,7 @@ jobs:
         - name: Create manifest list and push
           working-directory: /tmp/digests
           run: |
-            docker buildx imagetools create $(jq -cr '.target."docker-metadata-action".tags | map(select(startswith("${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}")) | "-t " + .) | join(" ")' tmp/bake-meta.json) \
+            docker buildx imagetools create $(jq -cr '.target."docker-metadata-action".tags | map(select(startswith("${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}")) | "-t " + .) | join(" ")' /tmp/bake-meta.json) \
                 $(printf '${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}@sha256:%s ' *)
 
         - name: Inspect image
