@@ -253,14 +253,14 @@ jobs:
       - name: Export digest
         run: |
           mkdir -p ${{ runner.temp }}/digests
-          echo "BAKE_TARGET=${{ env.DOCKER_BAKE_TARGET }}" >> $GITHUB_ENV
+          bake-target=${{ env.DOCKER_BAKE_TARGET }}
           digest="${{ fromJSON(steps.bake.outputs.metadata).production['containerimage.digest'] }}"
           touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ env.PLATFORM_PAIR }}
+          name: digests-${{ env.PLATFORM }}
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
