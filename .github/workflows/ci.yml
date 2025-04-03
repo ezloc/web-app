@@ -29,7 +29,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      id: ${{ steps.build.outputs.id }}
+      # Define output for the job
+      build_id: ${{ steps.build.outputs.build_id }}
     steps:
       - name: Generate build ID
         id: build
@@ -37,9 +38,9 @@ jobs:
           branch=${GITHUB_REF##*/}
           sha=${GITHUB_SHA::7}
           ts=$(date +%s)
-          # deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
-          # echo "::set-output name=id::${branch}-${sha}-${ts}"
-          echo "id=${branch}-${sha}-${ts}" >>${GITHUB_OUTPUT}
+          # WARN: deprecated, see: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+          echo "::set-output name=build_id::${branch}-${sha}-${ts}"
+          # echo "build_id=${branch}-${sha}-${ts}" >>${GITHUB_OUTPUT}
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -69,10 +70,13 @@ jobs:
           path: dist/
           retention-days: 1
 
-  test:
+  e2e-tests:
     runs-on: ubuntu-latest
     needs: build
     if: success()  # This job will only run if the build job succeeded
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -86,13 +90,16 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
+      - name: Install Cypress
+        run: npm install cypress
+
+      - name: Run Cypress tests
+        run: npx cypress run -- --browser ${{ matrix.browser }}
+
+      # - name: Run Cypress Tests
+      #   run: npx cypress run --headless
 
       # - name: Run E2E tests
       #   run: npm run test:e2e --headless
@@ -170,12 +177,13 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  docker-build-and-push:
+  docker-build:
     runs-on: ubuntu-latest
     needs:
       - docker-prepare
     # # Only run this job if we're on main, develop branch or pushing a tag
     # if: github.event_name != 'pull_request'
+    timeout-minutes: 20  # Timeout after 20 minutes
     permissions:
       contents: read
       packages: write
@@ -211,29 +219,7 @@ jobs:
         with:
           buildkitd-flags: "--debug"
 
-      # - name: Cache Docker layers
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: /tmp/.buildx-cache
-      #     key: ${{ runner.os }}-buildx-${{ github.sha }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-buildx-
-
-      # - name: Build Image
-      #   uses: docker/build-push-action@v2.4.0
-      #   with:
-      #     builder: ${{ steps.buildx.outputs.name }}
-      #     build-args: |
-      #       GITHUB_TOKEN=${{ secrets.GH_PACKAGES_TOKEN }}
-      #     file: Dockerfile
-      #     push: true
-      #     target: production
-      #     tags: |
-      #       ${{ env.DOCKER_REGISTRY}}/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.build.outputs.id }}
-      #     cache-from: type=local,src=/tmp/.buildx-cache
-      #     cache-to: type=local,dest=/tmp/.buildx-cache
-
-      - name: Build image with Bake and push it to Docker Hub
+      - name: Build image with Bake
         id: bake
         uses: docker/bake-action@v6  # https://github.com/docker/bake-action
         with:
@@ -243,7 +229,6 @@ jobs:
             cwd://${{ runner.temp }}/bake-meta.json
           builder: ${{ steps.buildx.outputs.name }}
           targets: ${{ env.DOCKER_BAKE_TARGET }}
-          # push: true
           set: |
             *.tags=${{ needs.build.outputs.id }}
             *.platform=${{ matrix.platform }}
@@ -265,10 +250,10 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  docker-merge-digests:
+  docker-push:
     runs-on: ubuntu-latest
     needs:
-      - docker-build-and-push
+      - docker-build
     # if: github.event_name != 'pull_request'
     steps:
     - name: Download meta bake definition
