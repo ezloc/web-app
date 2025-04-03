@@ -223,7 +223,7 @@ jobs:
         run: |
           mkdir -p ${{ runner.temp }}/digests
           echo "BAKE_TARGET=${{ env.DOCKER_BAKE_TARGET }}" >> $GITHUB_ENV
-          digest="${{ fromJSON(steps.bake.outputs.metadata).$BAKE_TARGET['containerimage.digest'] }}"
+          digest="${{ fromJSON(steps.bake.outputs.metadata).production['containerimage.digest'] }}"
           touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
       - name: Upload digest
