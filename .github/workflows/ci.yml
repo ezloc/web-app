@@ -29,49 +29,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Build
-        run: echo "Building..."
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  test:
-    runs-on: ubuntu-latest
-    needs: build  # This job depends on the build job
-    if: success()  # This job will only run if the build job succeeded
-    steps:
-      - name: Run Tests
-        run: echo "Running tests..."
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
+      - name: Install dependencies
+        run: npm ci
 
-# jobs:
-#   build:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
+      - name: Run linter
+        run: npm run lint
 
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: ${{ env.NODE_VERSION }}
-#           cache: 'npm'
+      - name: Run unit tests
+        run: npm run test:unit
 
-#       - name: Install dependencies
-#         run: npm ci
+      - name: Build Vue.js app
+        run: npm run build
 
-#       - name: Run linter
-#         run: npm run lint
-
-#       - name: Run unit tests
-#         run: npm run test:unit
-
-#       - name: Build Vue.js app
-#         run: npm run build
-
-#       - name: Upload build artifacts
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: dist
-#           path: dist/
-#           retention-days: 1
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
 
 #   test:
 #     runs-on: ubuntu-latest
