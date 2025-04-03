@@ -70,7 +70,7 @@ jobs:
           path: dist/
           retention-days: 1
 
-  e2e-tests:
+  e2e-test:
     runs-on: ubuntu-latest
     needs: build
     if: success()  # This job will only run if the build job succeeded
@@ -125,7 +125,7 @@ jobs:
   docker-prepare:
     runs-on: ubuntu-latest
     needs:
-      - test
+      - e2e-test
     # Only run this job if we're on main, develop branch or pushing a tag
     # if: github.event_name != 'pull_request'
     outputs:
