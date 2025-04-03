@@ -225,7 +225,7 @@ jobs:
       #     builder: ${{ steps.buildx.outputs.name }}
       #     build-args: |
       #       GITHUB_TOKEN=${{ secrets.GH_PACKAGES_TOKEN }}
-      #     file: ./Dockerfile
+      #     file: Dockerfile
       #     push: true
       #     target: production
       #     tags: |
@@ -239,10 +239,11 @@ jobs:
         with:
           workdir: .
           files: |
-            ./docker-bake.hcl
+            docker-bake.hcl
             cwd://${{ runner.temp }}/bake-meta.json
           builder: ${{ steps.buildx.outputs.name }}
           targets: ${{ env.DOCKER_BAKE_TARGET }}
+          # push: true
           set: |
             *.tags=${{ needs.build.outputs.id }}
             *.platform=${{ matrix.platform }}
@@ -268,7 +269,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - docker-build-and-push
-    if: github.event_name != 'pull_request'
+    # if: github.event_name != 'pull_request'
     steps:
     - name: Download meta bake definition
       uses: actions/download-artifact@v4
