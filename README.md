@@ -97,12 +97,19 @@ npm run serve
 ```
 
 ### Using Docker
+
+* Launch in background
 ```bash
 # Build and start containers
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f app
+docker compose logs -f
+```
+
+* Build and launch in foreground
+```bash
+docker compose -f docker-compose.e2e.yml up --build
 ```
 
 ## Development Workflow
@@ -131,6 +138,7 @@ Types:
 - chore: Changes to build process or auxiliary tools
 
 ### Testing
+
 Unit tests with Jest:
 ```bash
 npm run test:unit
@@ -139,6 +147,11 @@ npm run test:unit
 E2E tests with Cypress:
 ```bash
 npm run test:e2e
+```
+
+Using Docker:
+```bash
+docker compose -f docker-compose.e2e.yml up --build
 ```
 
 ## Deployment
