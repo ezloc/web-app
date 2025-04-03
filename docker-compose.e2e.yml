@@ -6,18 +6,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: development
+      target: test
     container_name: ezloc-web-app
     ports:
       - "8080:80"
     env_file:
-      - .env.development
+      - .env.test
     volumes:
       - ./src:/home/app/src
     networks:
       - ezloc-network
 
-  # Optional development database
+  # Optional database
   ezloc-db:
     container_name: ezloc-db
     image: postgres:13-alpine

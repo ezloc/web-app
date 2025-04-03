@@ -8,16 +8,15 @@ concurrency:
 on:
   push:
     branches: [ main ]
-    tags:
-      - 'v*'
+    tags: [ 'v*' ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    environment: production  # Requires approval before deployment
     steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v3

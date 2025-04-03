@@ -1,12 +1,16 @@
 name: Security Scanning
 
 on:
+  push:
+    branches: [ main, develop ]
   pull_request:
+    branches: [ main, develop ]
   schedule:
     - cron: '0 2 * * *'  # Daily scan
 
 jobs:
-  security-scan:
+  vulnerability-scan:
+    name: Vulnerability scanning
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -25,3 +29,41 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
+
+  codeql-analyze:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript', 'typescript' ]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  secret-detection:
+    name: Secret detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install truffleHog
+        run: pip install truffleHog
+
+      - name: Run Secret Scan
+        run: trufflehog --json .

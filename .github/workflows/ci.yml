@@ -8,272 +8,292 @@ concurrency:
 on:
   push:
     branches: [ main, develop ]
-    tags: [ 'v*' ]
+    tags:
+      - 'v*'
+    paths-ignore:
+      - '**.md'
+
   pull_request:
     branches: [ main, develop ]
-
-    # # paths-ignore:
-    # #   - '**.md'
-    # paths:
-    #     - Dockerfile
-    #     - .github/workflows/ci.yaml
+    paths-ignore:
+      - '**.md'
 
 # Environment variables available to all jobs and steps in this workflow
 env:
-    NODE_VERSION: 22
-    DOCKER_REGISTRY: docker.io #ghcr.io
-    DOCKER_IMAGE_NAME: ntdtfr/ezloc-web-app #${{ github.repository }}
+  NODE_VERSION: 22
+  DOCKER_REGISTRY: docker.io #ghcr.io
+  DOCKER_IMAGE_NAME: ntdtfr/ezloc-web-app #${{ github.repository }}
+  DOCKER_BAKE_TARGET: production
 
 jobs:
-    build:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      # Define output for the job
+      build_id: ${{ steps.build.outputs.build_id }}
+    steps:
+      - name: Generate build ID
+        id: build
+        run: |
+          branch=${GITHUB_REF##*/}
+          sha=${GITHUB_SHA::7}
+          ts=$(date +%s)
+          # WARN: deprecated, see: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+          echo "::set-output name=build_id::${branch}-${sha}-${ts}"
+          # echo "build_id=${branch}-${sha}-${ts}" >>${GITHUB_OUTPUT}
 
-        - name: Set up Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: ${{ env.NODE_VERSION }}
-            cache: 'npm'
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-        - name: Install dependencies
-          run: npm ci
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-        - name: Run linter
-          run: npm run lint
+      - name: Install dependencies
+        run: npm install
 
-        - name: Run unit tests
-          run: npm run test:unit
+      - name: Run linter
+        run: npm run lint
 
-        - name: Build Vue.js app
-          run: npm run build
+      - name: Run unit tests
+        run: npm run test:unit
 
-        - name: Upload build artifacts
-          uses: actions/upload-artifact@v4
-          with:
-            name: dist
-            path: dist/
-            retention-days: 1
+      - name: Build Vue.js app
+        run: npm run build
 
-    test:
-      runs-on: ubuntu-latest
-      needs:
-        - build
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
-          with:
-            fetch-depth: 0  # Shallow clones should be disabled for better SonarQube analysis
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
 
-        - name: Setup Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: ${{ env.NODE_VERSION }}
-            cache: 'npm'
+  e2e-test:
+    runs-on: ubuntu-latest
+    needs: build
+    if: success()  # This job will only run if the build job succeeded
+    # strategy:
+    #   matrix:
+    #     browser: [chrome, firefox]
+    timeout-minutes: 5  # Timeout after 5 minutes
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better SonarQube analysis
 
-        - name: Install dependencies
-          run: npm ci
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-        - name: Download build artifacts
-          uses: actions/download-artifact@v4
-          with:
-            name: dist
-            path: dist/
+      - name: Install dependencies
+        run: npm install
 
-        # - name: Run E2E tests
-        #   run: npm run test:e2e --headless
+      - name: Install Cypress
+        run: npm install cypress
 
-    # quality-gates:
-    #   runs-on: ubuntu-latest
-    #   needs:
-    #     - build
-    #   steps:
-    #     - name: SonarQube Quality Gates
-    #       uses: SonarSource/sonarcloud-github-action@master
-    #       env:
-    #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    #       with:
-    #         sonarToken: ${{ secrets.SONAR_TOKEN }}
-    #         sonarProjectKey: ${{ github.repository }}
-    #         sonarOrganization: ${{ github.repository_owner }}
-    #         sonarQualityGate: 'WARN'
+      # - name: Run Cypress tests
+      #   run: npx cypress run -- --browser ${{ matrix.browser }}
 
-    # https://docs.docker.com/build/ci/github-actions/multi-platform/
-    docker-prepare:
-        runs-on: ubuntu-latest
-        needs:
-          - test
-        # Only run this job if we're on main, develop branch or pushing a tag
-        if: github.event_name != 'pull_request'
-        outputs:
-          matrix: ${{ steps.platforms.outputs.matrix }}
-        steps:
-          - name: Checkout repository
-            uses: actions/checkout@v4
+      # - name: Run Cypress Tests
+      #   run: npx cypress run --headless
 
-          - name: Create matrix
-            id: platforms
-            run: |
-              echo "matrix=$(docker buildx bake production --print | jq -cr '.target."production".platforms')" >>${GITHUB_OUTPUT}
+      - name: Run E2E tests
+        run: npm run test:e2e --headless
 
-          - name: Show matrix
-            run: |
-              echo ${{ steps.platforms.outputs.matrix }}
+  quality-gates:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: SonarQube Quality Gates
+        run: echo "Run Quality Gates..."
+        # uses: SonarSource/sonarcloud-github-action@master
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        #   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # with:
+        #   sonarToken: ${{ secrets.SONAR_TOKEN }}
+        #   sonarProjectKey: ${{ github.repository }}
+        #   sonarOrganization: ${{ github.repository_owner }}
+        #   sonarQualityGate: 'WARN'
 
-          - name: Extract Docker metadata
-            id: meta
-            uses: docker/metadata-action@v5
-            with:
-              images: ${{ env.DOCKER_IMAGE_NAME }}
-              # tags: |
-              #   type=ref,event=branch
-              #   type=ref,event=pr
-              #   type=semver,pattern={{version}}
-              #   type=semver,pattern={{major}}.{{minor}}
-              #   type=sha,format=short
-              # tags: |
-              #   # dynamically set the branch name and sha as a custom tag
-              #   type=raw,value=1.0.0-{{branch}}-{{sha}}
-              #   # type=match,pattern=(.*)-r,group=1
-              #   # type=ref,event=pr
-              #   # type=edge
-              # labels: |
-              #   org.opencontainers.image.title=Ezloc Web Application
-              #   org.opencontainers.image.description=Web application for Ezloc project
-              #   org.opencontainers.image.vendor=ntdt
+  # https://docs.docker.com/build/ci/github-actions/multi-platform/
+  docker-prepare:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    # Only run this job if we're on main, develop branch or pushing a tag
+    # if: github.event_name != 'pull_request'
+    outputs:
+      matrix: ${{ steps.platforms.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-          - name: Rename meta bake definition file
-            run: |
-              mv "${{ steps.meta.outputs.bake-file }}" "${{ runner.temp }}/bake-meta.json"
+      - name: Create matrix
+        id: platforms
+        run: |
+          echo "matrix=$(docker buildx bake ${{ env.DOCKER_BAKE_TARGET }} --print | jq -cr '.target."${{ env.DOCKER_BAKE_TARGET }}".platforms')" >>${GITHUB_OUTPUT}
 
-          - name: Upload meta bake definition
-            uses: actions/upload-artifact@v4
-            with:
-              name: bake-meta
-              path: ${{ runner.temp }}/bake-meta.json
-              if-no-files-found: error
-              retention-days: 1
+      - name: Show matrix
+        run: |
+          echo ${{ steps.platforms.outputs.matrix }}
 
-    docker-build-and-push:
-        runs-on: ubuntu-latest
-        needs:
-          - docker-prepare
-        # # Only run this job if we're on main, develop branch or pushing a tag
-        # if: github.event_name != 'pull_request'
-        permissions:
-          contents: read
-          packages: write
-        strategy:
-            fail-fast: false
-            matrix:
-              platform: ${{ fromJson(needs.docker-prepare.outputs.matrix) }}
-        steps:
-          - name: Prepare
-            run: |
-              platform=${{ matrix.platform }}
-              echo "PLATFORM=${platform//\//-}" >> $GITHUB_ENV
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_NAME }}
+          # tags: |
+          #   type=ref,event=branch
+          #   type=ref,event=pr
+          #   type=semver,pattern={{version}}
+          #   type=semver,pattern={{major}}.{{minor}}
+          #   type=sha,format=short
+          # tags: |
+          #   # dynamically set the branch name and sha as a custom tag
+          #   type=raw,value=1.0.0-{{branch}}-{{sha}}
+          #   # type=match,pattern=(.*)-r,group=1
+          #   # type=ref,event=pr
+          #   # type=edge
+          # labels: |
+          #   org.opencontainers.image.title=Ezloc Web Application
+          #   org.opencontainers.image.description=Web application for Ezloc project
+          #   org.opencontainers.image.vendor=ntdt
 
-          - name: Download meta bake definition
-            uses: actions/download-artifact@v4
-            with:
-              name: bake-meta
-              path: ${{ runner.temp }}
+      - name: Rename meta bake definition file
+        run: |
+          mv "${{ steps.meta.outputs.bake-file }}" "${{ runner.temp }}/bake-meta.json"
 
-          - name: Login to Docker Hub
-            uses: docker/login-action@v3
-            with:
-              #registry: ${{ env.DOCKER_REGISTRY }}
-              username: ${{ secrets.DOCKER_USERNAME }}
-              password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Upload meta bake definition
+        uses: actions/upload-artifact@v4
+        with:
+          name: bake-meta
+          path: ${{ runner.temp }}/bake-meta.json
+          if-no-files-found: error
+          retention-days: 1
 
-          - name: Set up QEMU
-            uses: docker/setup-qemu-action@v3
+  docker-build:
+    runs-on: ubuntu-latest
+    needs:
+      - docker-prepare
+    # # Only run this job if we're on main, develop branch or pushing a tag
+    # if: github.event_name != 'pull_request'
+    timeout-minutes: 20  # Timeout after 20 minutes
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+        fail-fast: false
+        matrix:
+          platform: ${{ fromJson(needs.docker-prepare.outputs.matrix) }}
+    steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM=${platform//\//-}" >> $GITHUB_ENV
 
-          - name: Set up Docker Buildx
-            uses: docker/setup-buildx-action@v3
-            with:
-              buildkitd-flags: "--debug"
+      - name: Download meta bake definition
+        uses: actions/download-artifact@v4
+        with:
+          name: bake-meta
+          path: ${{ runner.temp }}
 
-          # - name: Login to GHCR
-          #   uses: docker/login-action@v3
-          #   with:
-          #     registry: ghcr.io
-          #     username: ${{ github.repository_owner }}
-          #     password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          #registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-          - name: Build image with Bake and push it to Docker Hub
-            id: bake
-            uses: docker/bake-action@v6  # https://github.com/docker/bake-action
-            with:
-              workdir: .
-              files: |
-                ./docker-bake.hcl
-                cwd://${{ runner.temp }}/bake-meta.json
-              targets: production
-              set: |
-                *.tags=${{ env.DOCKER_IMAGE_NAME }}
-                *.platform=${{ matrix.platform }}
-                *.output=type=image,push-by-digest=true,name-canonical=true,push=true
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-          - name: Export digest
-            run: |
-              mkdir -p ${{ runner.temp }}/digests
-              digest="${{ fromJSON(steps.bake.outputs.metadata).production['containerimage.digest'] }}"
-              touch "${{ runner.temp }}/digests/${digest#sha256:}"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        id: buildx
+        with:
+          buildkitd-flags: "--debug"
 
-          - name: Upload digest
-            uses: actions/upload-artifact@v4
-            with:
-              name: digests-${{ env.PLATFORM_PAIR }}
-              path: ${{ runner.temp }}/digests/*
-              if-no-files-found: error
-              retention-days: 1
+      - name: Build image with Bake
+        id: bake
+        uses: docker/bake-action@v6  # https://github.com/docker/bake-action
+        with:
+          workdir: .
+          files: |
+            docker-bake.hcl
+            cwd://${{ runner.temp }}/bake-meta.json
+          builder: ${{ steps.buildx.outputs.name }}
+          targets: ${{ env.DOCKER_BAKE_TARGET }}
+          set: |
+            *.tags=${{ needs.build.outputs.build_id }}
+            *.platform=${{ matrix.platform }}
+            *.cache-from=type=gha,scope=build-${{ env.PLATFORM }}
+            *.cache-to=type=gha,scope=build-${{ env.PLATFORM }}
+            *.output=type=image,name=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
 
-    docker-merge-digests:
-        runs-on: ubuntu-latest
-        needs:
-          - docker-build-and-push
-        if: github.event_name != 'pull_request'
-        steps:
-        - name: Download meta bake definition
-          uses: actions/download-artifact@v4
-          with:
-            name: bake-meta
-            path: ${{ runner.temp }}
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ fromJSON(steps.bake.outputs.metadata).production['containerimage.digest'] }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
-        - name: Download digests
-          uses: actions/download-artifact@v4
-          with:
-            path: ${{ runner.temp }}/digests
-            pattern: digests-*
-            merge-multiple: true
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
 
-        - name: Login to DockerHub
-          uses: docker/login-action@v3
-          with:
-            #registry: ${{ env.DOCKER_REGISTRY }}
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}
+  docker-push:
+    runs-on: ubuntu-latest
+    needs:
+      - docker-build
+    # if: github.event_name != 'pull_request'
+    steps:
+    - name: Download meta bake definition
+      uses: actions/download-artifact@v4
+      with:
+        name: bake-meta
+        path: ${{ runner.temp }}
 
-        # - name: Login to GHCR
-        #   uses: docker/login-action@v3
-        #   with:
-        #     registry: ghcr.io
-        #     username: ${{ github.repository_owner }}
-        #     password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Download digests
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ runner.temp }}/digests
+        pattern: digests-*
+        merge-multiple: true
 
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v3
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        #registry: ${{ env.DOCKER_REGISTRY }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-        - name: Create manifest list and push
-          working-directory: ${{ runner.temp }}/digests
-          run: |
-            docker buildx imagetools create $(jq -cr '.target."docker-metadata-action".tags | map(select(startswith("${{ env.DOCKER_IMAGE_NAME }}")) | "-t " + .) | join(" ")' ${{ runner.temp }}/bake-meta.json) \
-                $(printf '${{ env.DOCKER_IMAGE_NAME }}@sha256:%s ' *)
+    # - name: Login to GHCR
+    #   uses: docker/login-action@v3
+    #   with:
+    #     registry: ghcr.io
+    #     username: ${{ github.repository_owner }}
+    #     password: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Inspect image
-          run: |
-            tag=$(jq -r '.target."docker-metadata-action".args.DOCKER_META_VERSION' ${{ runner.temp }}/bake-meta.json)
-            docker buildx imagetools inspect ${{ env.DOCKER_IMAGE_NAME }}:${tag}
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Create manifest list and push
+      working-directory: ${{ runner.temp }}/digests
+      run: |
+        docker buildx imagetools create $(jq -cr '.target."docker-metadata-action".tags | map(select(startswith("${{ env.DOCKER_IMAGE_NAME }}")) | "-t " + .) | join(" ")' ${{ runner.temp }}/bake-meta.json) \
+            $(printf '${{ env.DOCKER_IMAGE_NAME }}@sha256:%s ' *)
+
+    - name: Inspect image
+      run: |
+        tag=$(jq -r '.target."docker-metadata-action".args.DOCKER_META_VERSION' ${{ runner.temp }}/bake-meta.json)
+        docker buildx imagetools inspect ${{ env.DOCKER_IMAGE_NAME }}:${tag}
