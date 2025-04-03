@@ -253,7 +253,6 @@ jobs:
       - name: Export digest
         run: |
           mkdir -p ${{ runner.temp }}/digests
-          bake-target=${{ env.DOCKER_BAKE_TARGET }}
           digest="${{ fromJSON(steps.bake.outputs.metadata).production['containerimage.digest'] }}"
           touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
