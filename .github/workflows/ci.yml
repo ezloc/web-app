@@ -23,6 +23,7 @@ env:
     NODE_VERSION: 22
     DOCKER_REGISTRY: docker.io #ghcr.io
     DOCKER_IMAGE_NAME: ntdtfr/ezloc-web-app #${{ github.repository }}
+    DOCKER_BAKE_TARGET: production
 
 jobs:
     build:
@@ -60,6 +61,7 @@ jobs:
       runs-on: ubuntu-latest
       needs:
         - build
+      if: success()  # This job will only run if the build job succeeded
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4
@@ -106,7 +108,7 @@ jobs:
         needs:
           - test
         # Only run this job if we're on main, develop branch or pushing a tag
-        if: github.event_name != 'pull_request'
+        # if: github.event_name != 'pull_request'
         outputs:
           matrix: ${{ steps.platforms.outputs.matrix }}
         steps:
@@ -211,7 +213,7 @@ jobs:
               files: |
                 ./docker-bake.hcl
                 cwd://${{ runner.temp }}/bake-meta.json
-              targets: production
+              targets: ${{ env.DOCKER_BAKE_TARGET }}
               set: |
                 *.tags=${{ env.DOCKER_IMAGE_NAME }}
                 *.platform=${{ matrix.platform }}
@@ -220,6 +222,7 @@ jobs:
           - name: Export digest
             run: |
               mkdir -p ${{ runner.temp }}/digests
+              target-data=fromJSON(steps.bake.outputs.metadata).${{ env.DOCKER_BAKE_TARGET }}['containerimage.digest']
               digest="${{ fromJSON(steps.bake.outputs.metadata).production['containerimage.digest'] }}"
               touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
