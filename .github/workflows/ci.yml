@@ -37,8 +37,9 @@ jobs:
           branch=${GITHUB_REF##*/}
           sha=${GITHUB_SHA::7}
           ts=$(date +%s)
-          echo "::set-output name=id::${branch}-${sha}-${ts}"
-          echo "build_id=${branch}-${sha}-${ts}" >>${GITHUB_OUTPUT}
+          # deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+          # echo "::set-output name=id::${branch}-${sha}-${ts}"
+          echo "id=${branch}-${sha}-${ts}" >>${GITHUB_OUTPUT}
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -243,11 +244,11 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           targets: ${{ env.DOCKER_BAKE_TARGET }}
           set: |
-            *.tags=${{ env.DOCKER_IMAGE_NAME }}
+            *.tags=${{ needs.build.outputs.id }}
             *.platform=${{ matrix.platform }}
             *.cache-from=type=gha,scope=build-${{ env.PLATFORM }}
             *.cache-to=type=gha,scope=build-${{ env.PLATFORM }}
-            *.output=type=image,"name=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}",push-by-digest=true,name-canonical=true,push=true
+            *.output=type=image,name=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
         run: |
