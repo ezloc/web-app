@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: development
     container_name: ezloc-web-app
     ports:
       - "8080:80"

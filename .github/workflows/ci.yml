@@ -52,7 +52,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run linter
         run: npm run lint
@@ -98,11 +98,11 @@ jobs:
       # - name: Run Cypress tests
       #   run: npx cypress run -- --browser ${{ matrix.browser }}
 
-      - name: Run Cypress Tests
-        run: npx cypress run --headless
+      # - name: Run Cypress Tests
+      #   run: npx cypress run --headless
 
-      # - name: Run E2E tests
-      #   run: npm run test:e2e --headless
+      - name: Run E2E tests
+        run: npm run test:e2e --headless
 
   quality-gates:
     runs-on: ubuntu-latest
@@ -230,7 +230,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           targets: ${{ env.DOCKER_BAKE_TARGET }}
           set: |
-            *.tags=${{ needs.build.outputs.id }}
+            *.tags=${{ needs.build.outputs.build_id }}
             *.platform=${{ matrix.platform }}
             *.cache-from=type=gha,scope=build-${{ env.PLATFORM }}
             *.cache-to=type=gha,scope=build-${{ env.PLATFORM }}
