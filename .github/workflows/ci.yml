@@ -220,7 +220,7 @@ jobs:
           - name: Export digest
             run: |
               mkdir -p ${{ runner.temp }}/digests
-              digest="${{ fromJSON(steps.bake.outputs.metadata).image['containerimage.digest'] }}"
+              digest="${{ fromJSON(steps.bake.outputs.metadata).production['containerimage.digest'] }}"
               touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
           - name: Upload digest
@@ -268,9 +268,9 @@ jobs:
           uses: docker/setup-buildx-action@v3
 
         - name: Create manifest list and push
-          working-directory: /tmp/digests
+          working-directory: ${{ runner.temp }}/digests
           run: |
-            docker buildx imagetools create $(jq -cr '.target."docker-metadata-action".tags | map(select(startswith("${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}")) | "-t " + .) | join(" ")' ${{ runner.temp }}/bake-meta.json) \
+            docker buildx imagetools create $(jq -cr '.target."docker-metadata-action".tags | map(select(startswith("${{ env.DOCKER_IMAGE_NAME }}")) | "-t " + .) | join(" ")' ${{ runner.temp }}/bake-meta.json) \
                 $(printf '${{ env.DOCKER_IMAGE_NAME }}@sha256:%s ' *)
 
         - name: Inspect image
