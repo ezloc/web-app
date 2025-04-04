@@ -1,5 +1,9 @@
 # Ezloc Web Application
 
+[![CI](https://github.com/ezloc/web-app/actions/workflows/ci.yml/badge.svg)](https://github.com/ezloc/web-app/actions/workflows/ci.yml)
+[![Security Scanning](https://github.com/ezloc/web-app/actions/workflows/security-scan.yml/badge.svg)](https://github.com/ezloc/web-app/actions/workflows/security-scan.yml)
+[![Deploy to Production](https://github.com/ezloc/web-app/actions/workflows/cd-production.yml/badge.svg)](https://github.com/ezloc/web-app/actions/workflows/cd-production.yml)
+
 ## Overview
 This is a cloud-native Vue.js application built with best practices for security, performance, and maintainability.
 
