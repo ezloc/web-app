@@ -80,7 +80,7 @@ web-app/
 ## Getting Started
 
 ### Prerequisites
-- Node.js 16+
+- Node.js 22+
 - npm 7+
 - Docker and Docker Compose (optional for containerized development)
 
