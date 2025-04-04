@@ -144,31 +144,34 @@ jobs:
         run: |
           echo ${{ steps.platforms.outputs.matrix }}
 
+      # https://github.com/docker/metadata-action#bake-definition
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.DOCKER_IMAGE_NAME }}
-          # tags: |
-          #   type=ref,event=branch
-          #   type=ref,event=pr
-          #   type=semver,pattern={{version}}
-          #   type=semver,pattern={{major}}.{{minor}}
-          #   type=sha,format=short
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short # 7 characters
           # tags: |
           #   # dynamically set the branch name and sha as a custom tag
           #   type=raw,value=1.0.0-{{branch}}-{{sha}}
-          #   # type=match,pattern=(.*)-r,group=1
-          #   # type=ref,event=pr
-          #   # type=edge
-          # labels: |
-          #   org.opencontainers.image.title=Ezloc Web Application
-          #   org.opencontainers.image.description=Web application for Ezloc project
-          #   org.opencontainers.image.vendor=ntdt
+          #   type=match,pattern=(.*)-r,group=1
+          #   type=ref,event=pr
+          #   type=edge
+          labels: |
+            org.opencontainers.image.title=Ezloc Web Application
+            org.opencontainers.image.description=Web application for Ezloc project
+            org.opencontainers.image.vendor=ntdt
 
-      - name: Rename meta bake definition file
+      - name: Rename meta bake definition files
         run: |
           mv "${{ steps.meta.outputs.bake-file }}" "${{ runner.temp }}/bake-meta.json"
+          mv "${{ steps.meta.outputs.bake-file-tags }}" "${{ runner.temp }}/bake-meta-tags.json"
+          mv "${{ steps.meta.outputs.bake-file-labels }}" "${{ runner.temp }}/bake-meta-labels.json"
 
       - name: Upload meta bake definition
         uses: actions/upload-artifact@v4
@@ -222,16 +225,19 @@ jobs:
 
       - name: Build image with Bake
         id: bake
-        uses: docker/bake-action@v6  # https://github.com/docker/bake-action
+        # https://github.com/docker/bake-action
+        uses: docker/bake-action@v6
         with:
           workdir: .
           files: |
-            docker-bake.hcl
+            ./docker-bake.hcl
             cwd://${{ runner.temp }}/bake-meta.json
+            # cwd://${{ runner.temp }}/bake-meta-tags.json
+            # cwd://${{ runner.temp }}/bake-meta-labels.json
           builder: ${{ steps.buildx.outputs.name }}
           targets: ${{ env.DOCKER_BAKE_TARGET }}
           set: |
-            *.tags=${{ needs.build.outputs.build_id }}
+            *.tags=
             *.platform=${{ matrix.platform }}
             *.cache-from=type=gha,scope=build-${{ env.PLATFORM }}
             *.cache-to=type=gha,scope=build-${{ env.PLATFORM }}
