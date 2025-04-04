@@ -23,8 +23,8 @@ COPY --chown=node:node package.json package-lock.json $HOME
 
 # Install application modules
 # RUN npm ci --only=production
-# RUN npm ci && npm cache clean --force
-RUN npm install
+RUN npm ci && npm cache clean --force
+# RUN npm install
 
 # Copy source files and build the application
 COPY --chown=node:node . .
