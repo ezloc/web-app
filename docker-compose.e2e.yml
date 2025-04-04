@@ -2,12 +2,12 @@
 version: '3.8'
 
 services:
-  ezloc-web-app:
+  web-app:
     build:
       context: .
       dockerfile: Dockerfile
       target: test
-    container_name: ezloc-web-app
+    container_name: web-app
     environment:
       - NODE_ENV=test
     ports:
@@ -15,28 +15,13 @@ services:
     env_file:
       - .env.test
     volumes:
-      - ./src:/home/app/src
+      - ./src:/opt/app/src
+      - ./tests:/opt/app/tests
+      - ./public:/opt/app/public
     networks:
-      - ezloc-network
-
-  # Optional database
-  ezloc-db:
-    container_name: ezloc-db
-    image: postgres:13-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: app_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - ezloc-network
+      - default
 
 networks:
-  ezloc-network:
+  default:
     driver: bridge
 
-volumes:
-  postgres_data:

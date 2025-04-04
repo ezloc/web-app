@@ -7,7 +7,7 @@ ARG NODE_VERSION=22
 FROM node:${NODE_VERSION}-alpine AS build
 
 # Define environment variables
-ENV HOME=/home/app
+ENV HOME=/opt/app
 
 # Create application folder and assign rights to the node user
 RUN mkdir -p $HOME && chown -R node:node $HOME
@@ -62,7 +62,7 @@ WORKDIR /usr/share/nginx/html
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy built files from previous stage
-COPY --from=build /home/app/dist .
+COPY --from=build /opt/app/dist .
 
 # Copy custom Nginx configuration (optional but recommended)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
