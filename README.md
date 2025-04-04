@@ -83,6 +83,8 @@ web-app/
 - Node.js 22+
 - npm 7+
 - Docker and Docker Compose (optional for containerized development)
+- Skaffold v2+
+- Kubernetes cluster (GKE or Minikube)
 
 ### Installation
 ```bash
@@ -100,8 +102,9 @@ cp .env.development .env
 npm run serve
 ```
 
-### Using Docker
+### Use Docker Compose to develop and test on local
 
+To run the project, launch the following command:
 * Launch in background
 ```bash
 # Build and start containers
@@ -114,6 +117,22 @@ docker compose logs -f
 * Build and launch in foreground
 ```bash
 docker compose -f docker-compose.e2e.yml up --build
+```
+
+### Using Skaffold to develop and test with a Kubernetes cluster (GKE or Minikube) - Recommended choice
+
+To run the project, use the the following command:
+
+* For local cluster (Minikube)
+
+```shell
+skaffold dev -p minikube --tail=false --iterative-status-check=false
+```
+
+* For Google Kubernetes Engine (GKE)
+
+```shell
+skaffold dev -p gke --tail=false --iterative-status-check=false
 ```
 
 ## Development Workflow
