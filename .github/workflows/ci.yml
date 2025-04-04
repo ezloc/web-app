@@ -9,7 +9,7 @@ on:
   push:
     branches: [ main, develop ]
     tags:
-      - '*'
+      - 'v*'
     paths-ignore:
       - '**.md'
 
@@ -151,10 +151,11 @@ jobs:
         with:
           images: ${{ env.DOCKER_IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=ref,event=branch
+            type=ref,event=pr
             type=sha,format=short # 7 characters
           # tags: |
           #   # dynamically set the branch name and sha as a custom tag
