@@ -170,8 +170,6 @@ jobs:
       - name: Rename meta bake definition files
         run: |
           mv "${{ steps.meta.outputs.bake-file }}" "${{ runner.temp }}/bake-meta.json"
-          # mv "${{ steps.meta.outputs.bake-file-tags }}" "${{ runner.temp }}/bake-meta-tags.json"
-          # mv "${{ steps.meta.outputs.bake-file-labels }}" "${{ runner.temp }}/bake-meta-labels.json"
 
       - name: Upload meta bake definition
         uses: actions/upload-artifact@v4
@@ -232,8 +230,6 @@ jobs:
           files: |
             ./docker-bake.hcl
             cwd://${{ runner.temp }}/bake-meta.json
-            # cwd://${{ runner.temp }}/bake-meta-tags.json
-            # cwd://${{ runner.temp }}/bake-meta-labels.json
           builder: ${{ steps.buildx.outputs.name }}
           targets: ${{ env.DOCKER_BAKE_TARGET }}
           set: |
